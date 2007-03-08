@@ -1,0 +1,34 @@
+use strict;
+use warnings;
+use Module::Build;
+
+my $builder = Module::Build->new(
+    module_name         => 'Pod::POM::Web',
+    license             => 'perl',
+    dist_author         => 'Laurent Dami <laurent.dami@justice.ge.ch>',
+    dist_version_from   => 'lib/Pod/POM/Web.pm',
+    requires => {
+      'Alien::GvaScript'     => 1.00,
+      'Pod::POM'             => 0,
+      'Pod::POM::View::HTML' => 0,
+      'List::Util'           => 0,
+      'List::MoreUtils'      => 0,
+      'Module::CoreList'     => 0,
+      'Time::HiRes'          => 0,
+      'HTTP::Daemon'         => 0,
+      'URI'                  => 0,
+      'URI::QueryParam'      => 0,
+      },
+    recommends => {
+      'Search::Indexer' => 0.72,
+      'PPI::HTML'       => 0,
+    },
+    build_requires => {
+      'Test::More' => 0,
+    },
+    add_to_cleanup      => [ 'Pod-POM-Web-*' ],
+    create_makefile_pl  => 'traditional',
+
+);
+$builder->add_build_element($_) foreach qw/js css gif/; # items in Web/lib
+$builder->create_build_script();
