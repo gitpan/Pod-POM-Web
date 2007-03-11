@@ -1,6 +1,6 @@
 ---
 name: Pod-POM-Web
-version: 1.00
+version: 1.01
 author:
   - 'Laurent Dami <laurent.dami@justice.ge.ch>'
 abstract: HTML Perldoc server
@@ -13,7 +13,7 @@ requires:
   List::MoreUtils: 0
   List::Util: 0
   Module::CoreList: 0
-  Pod::POM: 0
+  Pod::POM: 0.17
   Pod::POM::View::HTML: 0
   Time::HiRes: 0
   URI: 0
@@ -22,11 +22,11 @@ build_requires:
   Test::More: 0
 recommends:
   PPI::HTML: 0
-  Search::Indexer: 0.72
+  Search::Indexer: 0.73
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.00
+    version: 1.01
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
 generated_by: Module::Build version 0.2806

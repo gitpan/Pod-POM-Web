@@ -3,7 +3,7 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 
-use Pod::POM;                   # for parsing Pod
+use Pod::POM 0.17;              # for parsing Pod
 use List::MoreUtils qw/uniq/;
 use Module::CoreList;           # for asking if a module belongs to Perl core
 use HTTP::Daemon;               # for the builtin HTTP server
@@ -16,14 +16,16 @@ use Alien::GvaScript;
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
 
 # filter @INC (don't want '.', nor server_root added by mod_perl)
 my $server_root = eval {Apache2::ServerUtil::server_root()} || "";
-our @search_dirs = grep {$_ ne '.' && $_ ne $server_root} @INC;
+our                # because accessed from Pod::POM::Web::Indexer
+   @search_dirs = grep {$_ ne '.' && $_ ne $server_root} @INC;
+
 
 my $coloring_package = eval {require ActiveState::Scineplex} ? "SCINEPLEX"
                      : eval {require PPI::HTML}              ? "PPI"      : "";
@@ -510,16 +512,20 @@ sub wrap_main_toc {
      style="width:100%; text-align:center;border-bottom: 1px solid">
 Perl Documentation
 </div>
-<a href="Pod/POM/Web/Help" class="small_title" style="float:right">Help</a>
-<br><span class="small_title">Search in</span>
+<div style="width:100%; text-align:right">
+<a href="Pod/POM/Web/Help" class="small_title">Help</a>
+</div>
+
 <form action="search" method="get">
+<span class="small_title">Search in</span>
      <select name="source">
       <option>perlfunc</option>
       <option>perlfaq</option>
       <option>modules</option>
       <option>fulltext</option>
-     </select><span class="small_title">for</span><input 
-         name="search" size="9"
+     </select><br>
+<span class="small_title">&nbsp;for</span><input 
+         name="search" size="15"
          autocomplete="off"
          onfocus="maybe_complete(this)">
 </form>
@@ -677,7 +683,8 @@ sub lib_file {
                    js   => 'application/x-javascript',
                    gif  => 'image/gif'}->{$extension}
                      or die "lib_file($filename): unexpected extension";
-  my ($content, $mtime) = $self->slurp_file("$dir/$filename");
+  my $content = $self->slurp_file("$dir/$filename");
+  my $mtime   = (stat "$dir/$filename")[9];
   $self->send_content({content   => $content, 
                        mtime     => $mtime, 
                        mime_type => $mime_type});
@@ -771,10 +778,8 @@ sub slurp_file {
   my ($self, $file) = @_;
   open my $fh, $file or die "open $file: $!";
   binmode($fh, ":crlf");
-  my $mtime = (stat $fh)[9];
   local $/ = undef;
-  my $content = <$fh>;
-  return wantarray ? ($content, $mtime) : $content;
+  return <$fh>;
 }
 
 

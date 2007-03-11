@@ -9,7 +9,7 @@ my $builder = Module::Build->new(
     dist_version_from   => 'lib/Pod/POM/Web.pm',
     requires => {
       'Alien::GvaScript'     => 1.00,
-      'Pod::POM'             => 0,
+      'Pod::POM'             => 0.17,
       'Pod::POM::View::HTML' => 0,
       'List::Util'           => 0,
       'List::MoreUtils'      => 0,
@@ -20,7 +20,7 @@ my $builder = Module::Build->new(
       'URI::QueryParam'      => 0,
       },
     recommends => {
-      'Search::Indexer' => 0.72,
+      'Search::Indexer' => 0.73,
       'PPI::HTML'       => 0,
     },
     build_requires => {

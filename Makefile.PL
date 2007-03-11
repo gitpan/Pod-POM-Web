@@ -10,7 +10,7 @@ WriteMakefile
                            'List::MoreUtils' => '0',
                            'List::Util' => '0',
                            'Module::CoreList' => '0',
-                           'Pod::POM' => '0',
+                           'Pod::POM' => '0.17',
                            'Pod::POM::View::HTML' => '0',
                            'Test::More' => '0',
                            'Time::HiRes' => '0',
