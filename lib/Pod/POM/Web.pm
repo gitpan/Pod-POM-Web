@@ -16,7 +16,7 @@ use Alien::GvaScript;
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -39,15 +39,17 @@ my $no_indexer = eval {require Pod::POM::Web::Indexer} ? 0 : $@;
 #----------------------------------------------------------------------
 
 sub server { # builtin HTTP server; unused if running under Apache
-  my $class = shift;
+  my ($class, $port) = @_;
+  $port ||= 8080;
 
-  my $port = $ARGV[0] || 8080;
-
-  my $d = HTTP::Daemon->new(LocalPort => $port) || die "could not start daemon";
+  my $d = HTTP::Daemon->new(LocalPort => $port,
+                            ReuseAddr => 1) # patch by CDOLAN
+    or die "could not start daemon on port $port";
   print STDERR "Please contact me at: <URL:", $d->url, ">\n";
   while (my $c = $d->accept) {
     while (my $req = $c->get_request) {
       print STDERR "URL : " , $req->url, "\n";
+      $c->force_last_request;               # patch by CDOLAN
       my $response = HTTP::Response->new;
       $class->handler($req, $response);
       $c->send_response($response);
@@ -61,7 +63,8 @@ sub server { # builtin HTTP server; unused if running under Apache
 sub handler : method  {
   my ($class, $request, $response) = @_; 
   my $self = $class->new($request, $response);
-  eval { $self->dispatch_request(); 1}  or $self->send_html($@);
+  eval { $self->dispatch_request(); 1}
+    or $self->send_content({content => $@, code => 500});  
   return 0; # Apache2::Const::OK;
 }
 
@@ -693,7 +696,7 @@ sub lib_file {
 
 sub send_html {
   my ($self, $html) = @_;
-  $self->send_content({content => $_[1]});
+  $self->send_content({content => $_[1], code => 200});
 }
 
 
@@ -702,7 +705,8 @@ sub send_content {
   my ($self, $args) = @_;
   my $length    = length $args->{content};
   my $mime_type = $args->{mime_type} || "text/html";
-  my $modified = gmtime $args->{mtime};
+  my $modified  = gmtime $args->{mtime};
+  my $code      = $args->{code} || 200;
 
   my $r = $self->{response};
   for (ref $r) {
@@ -717,6 +721,7 @@ sub send_content {
     };
 
     /^HTTP::Response/ and do {
+      $r->code($code);
       $r->header(Content_type   => $mime_type,
                  Content_length => $length);
       $r->header(Last_modified  => $modified) if $args->{mtime};
@@ -1245,7 +1250,8 @@ to put it on a public Internet server.
 
 Syntax coloring improves readability of code excerpts.
 If your Perl distribution is from ActiveState, then 
-C<Pod::POM::Web> will take of the L<ActiveState::Scineplex> module
+C<Pod::POM::Web> will take advantage 
+of the L<ActiveState::Scineplex> module
 which is already installed on your system. Otherwise,
 you need to install L<PPI::HTML>, available from CPAN.
 

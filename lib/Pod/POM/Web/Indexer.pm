@@ -93,10 +93,11 @@ sub fulltext {
                         preMatch  => '[[',
                         postMatch => ']]');
   } or die <<__EOHTML__;
-No fulltext index found. 
+No fulltext index found ($@). 
+<p>
 Please ask your system administrator to run the 
 command 
-
+</p>
 <pre>
   perl -MPod::POM::Web::Indexer -e "Pod::POM::Web::Indexer->new->index"
 </pre>
