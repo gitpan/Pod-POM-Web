@@ -16,7 +16,7 @@ use Alien::GvaScript;
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -1300,6 +1300,8 @@ the standalone HTTP server implemented in L<Pod::WebServer>.
 the wide possibilities of Andy Wardley's L<Pod::POM> parser.
 
 =back
+
+Thanks to BooK and CDolan for useful suggestions/patches.
 
 
 =head1 BUGS

@@ -102,7 +102,7 @@ command
   perl -MPod::POM::Web::Indexer -e "Pod::POM::Web::Indexer->new->index"
 </pre>
 
-Indexing may take about half an hour and and will use about
+Indexing may take about half an hour and will use about
 10 MB on your hard disk.
 __EOHTML__
 
