@@ -16,7 +16,7 @@ use Alien::GvaScript;
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -188,6 +188,7 @@ sub serve_source {
   foreach my $file (@files) {
     my $text = $self->slurp_file($file);
     my $view = Pod::POM::View::HTML::_PerlDoc->new(
+     root_url        => $self->{root_url},
      syntax_coloring => $params->{coloring} ? $coloring_package : "",
      line_numbering  => $params->{lines},
     );
@@ -429,12 +430,18 @@ sub htmlize_entries {
       $args{class} = 'TN_node TN_closed';
       $args{attrs} = qq{TN:contentURL='toc/$entry->{node}'};
     }
-    $args{href} = $entry->{node} if $entry->{pod};
+    if ($entry->{pod}) {
+      $args{href}     = $entry->{node};
+      $args{abstract} = $self->get_abstract($entry->{node});
+    }
     $html .= generic_node(%args);
   }
   return $html;
 }
 
+sub get_abstract {
+  # override in indexer
+}
 
 sub wrap_main_toc {
   my ($self, $perldocs, $pragmas, $modules) = @_;
@@ -744,6 +751,10 @@ sub send_content {
 #----------------------------------------------------------------------
 # generating GvaScript treeNavigator structure
 #----------------------------------------------------------------------
+my %escape_entity = ('&' => '&amp;',
+                     '<' => '&lt;',
+                     '>' => '&gt;',
+                     '"' => '&quot;');
 
 sub generic_node {
   my %args = @_;
@@ -756,6 +767,10 @@ sub generic_node {
                   : ("span", ""                     );
   $args{label_tag}   ||= $default_label_tag;
   $args{label_class} ||= "TN_label";
+  if ($args{abstract}) {
+    $args{abstract} =~ s/([&<>"])/$escape_entity{$1}/g;
+    $label_attrs .= qq{ title="$args{abstract}"};
+  }
   return qq{<div class="$args{class}"$args{attrs}>}
        .    qq{<$args{label_tag} class="$args{label_class}"$label_attrs>}
        .         $args{label}
@@ -1041,6 +1056,12 @@ sub view_verbatim {
     my $method = "${coloring}_coloring";
     $text = $self->$method($text);
   }
+
+  # hyperlinks to other modules
+  $text =~ s{(\buse\b(?:</span>)\s+(?:<span.*?>))([\w:]+)}
+            {my $url = $self->view_seq_link_transform_path($2);
+             qq{$1<a href="$url">$2</a>} }eg;
+
   if ($self->{line_numbering}) {
     my $line = 1;
     $text =~ s/^/sprintf "%6d\t", $line++/egm;
@@ -1135,8 +1156,9 @@ visiting a documentation page
 
 =item *
 
-a source code view with syntax coloring
-(this is an optional feature -- see section L</"Optional features">)
+a source code view with hyperlinks between used modules
+and optionally with syntax coloring
+(see section L</"Optional features">)
 
 
 =item *
@@ -1301,7 +1323,20 @@ the wide possibilities of Andy Wardley's L<Pod::POM> parser.
 
 =back
 
-Thanks to BooK and CDolan for useful suggestions/patches.
+Thanks to BooK who mentioned a weakness in the API 
+and to CDolan who supplied several useful suggestions and patches.
+
+
+=head1 RELEASE NOTES
+
+Indexed information in version 1.04 is not compatible 
+with previous versions.
+
+So if you upgraded from a previous version and want to use 
+the index, you need to rebuild it entirely, by running the 
+command :
+
+  perl -MPod::POM::Web::Indexer -e "Pod::POM::Web::Indexer->new->index(-from_scratch => 1)"
 
 
 =head1 BUGS
@@ -1329,8 +1364,7 @@ under the same terms as Perl itself.
 
 
   - tests !
-
-  - performance, expiry headers, server-side caching
+  - performance, expiry headers
   - also serve Programs (c:/perl/bin)
 
 Bugs:
