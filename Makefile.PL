@@ -6,6 +6,7 @@ WriteMakefile
           'VERSION_FROM' => 'lib/Pod/POM/Web.pm',
           'PREREQ_PM' => {
                            'Alien::GvaScript' => '1',
+                           'Encode::Guess' => '0',
                            'HTTP::Daemon' => '0',
                            'List::MoreUtils' => '0',
                            'List::Util' => '0',
