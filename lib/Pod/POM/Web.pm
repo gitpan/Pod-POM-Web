@@ -16,7 +16,7 @@ use Encode::Guess;
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -166,9 +166,23 @@ sub dispatch_request {
 
 sub redirect_index {
   my ($self) = @_;
-  return $self->send_html("<script>location='$self->{root_url}/index'</script>");
+  return $self->send_html(<<__EOHTML__);
+<html>
+<head>
+<script>location='$self->{root_url}/index'</script>
+</head>
+<body>
+<p>
+You should have been redirected to 
+<a href='$self->{root_url}/index'>$self->{root_url}/index</a>.
+</p>
+<p>
+If this did not happen, you probably don't have Javascript enabled.
+Please enable it to take advantage of Pod::POM::Web DHTML features.
+</p>
+</body>
+__EOHTML__
 }
-
 
 
 sub index_frameset {
@@ -738,7 +752,7 @@ sub send_content {
   my $charset   = ref $encoding ? $encoding->name : "";
   my $length    = length $args->{content};
   my $mime_type = $args->{mime_type} || "text/html";
-     $mime_type .= "; charset=$charset" if $charset;
+     $mime_type .= "; charset=$charset" if $charset and $mime_type =~ /html/;
   my $modified  = gmtime $args->{mtime};
   my $code      = $args->{code} || 200;
 
@@ -1271,6 +1285,8 @@ a mod_perl environment. If you have Apache2
 with mod_perl 2.0, then edit your 
 F<perl.conf> as follows :
 
+  PerlModule Apache2::RequestRec
+  PerlModule Apache2::RequestIO
   <Location /perldoc>
         SetHandler modperl
         PerlResponseHandler Pod::POM::Web->handler
@@ -1402,13 +1418,14 @@ the wide possibilities of Andy Wardley's L<Pod::POM> parser.
 
 =back
 
-Thanks to BooK who mentioned a weakness in the API 
-and to Chris Dolan who supplied many useful suggestions and patches.
+Thanks to BooK who mentioned a weakness in the API,
+to Chris Dolan who supplied many useful suggestions and patches,
+and to Rémi Pauchet who pointed out a regression bug with Firefox CSS.
 
 
 =head1 RELEASE NOTES
 
-Indexed information in version 1.04 is not compatible 
+Indexed information since version 1.04 is not compatible 
 with previous versions.
 
 So if you upgraded from a previous version and want to use 

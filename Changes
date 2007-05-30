@@ -1,5 +1,12 @@
 Revision history for Pod-POM-Web
 
+1.06
+  - fixed Firefox CSS bug introduced in v1.05
+  - updated doc for modperl configuration
+  - friendly message in /index if javascript is disabled
+  - search dirs can be given on the command-line
+
+        
 1.05    11.05.2007
   - patch from CDOLAN to add <head><title>
   - patch from CDOLAN to insert AnnoCPAN comments
