@@ -19,7 +19,7 @@ use Config;                     # where are the script directories
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -77,22 +77,22 @@ sub server { # builtin HTTP server; unused if running under Apache
   my ($class, $port) = @_;
   $port ||= 8080;
 
-  my $d = HTTP::Daemon->new(LocalPort => $port,
-                            ReuseAddr => 1) # patch by CDOLAN
+  my $daemon = HTTP::Daemon->new(LocalPort => $port,
+                                 ReuseAddr => 1) # patch by CDOLAN
     or die "could not start daemon on port $port";
-  print STDERR "Please contact me at: <URL:", $d->url, ">\n";
+  print STDERR "Please contact me at: <URL:", $daemon->url, ">\n";
 
   # main server loop
-  while (my $c = $d->accept) {
-    while (my $req = $c->get_request) {
+  while (my $client_connection = $daemon->accept) {
+    while (my $req = $client_connection->get_request) {
       print STDERR "URL : " , $req->url, "\n";
-      $c->force_last_request;               # patch by CDOLAN
+      $client_connection->force_last_request;    # patch by CDOLAN
       my $response = HTTP::Response->new;
       $class->handler($req, $response);
-      $c->send_response($response);
+      $client_connection->send_response($response);
     }
-    $c->close;
-    undef($c);
+    $client_connection->close;
+    undef($client_connection);
   }
 
 }
@@ -594,7 +594,7 @@ sub htmlize_perldocs {
 
   if (keys %$perldocs) {
     $html .= closed_node(label   => 'Unclassified', 
-                         content => htmlize_entries($perldocs));
+                         content => $self->htmlize_entries($perldocs));
   }
 
   return $html;
@@ -675,7 +675,7 @@ sub main_toc { #
     var no_indexer = $js_no_indexer;
 
     function submit_on_event(event) {
-        event.target.form.submit();
+        \$('search_form').submit();
     }
 
     function setup() {
@@ -733,7 +733,7 @@ Perl Documentation
 <a href="Pod/POM/Web/Help" class="small_title">Help</a>
 </div>
 
-<form action="search" method="get">
+<form action="search" id="search_form" method="get">
 <span class="small_title">Search in</span>
      <select name="source">
       <option>perlfunc</option>
@@ -1615,9 +1615,11 @@ the wide possibilities of Andy Wardley's L<Pod::POM> parser.
 
 =back
 
-Thanks to BooK who mentioned a weakness in the API,
-to Chris Dolan who supplied many useful suggestions and patches,
-and to Rémi Pauchet who pointed out a regression bug with Firefox CSS.
+Thanks to BooK who mentioned a weakness in the API, to Chris Dolan who
+supplied many useful suggestions and patches (esp. integration with
+AnnoCPAN), to Rémi Pauchet who pointed out a regression bug with
+Firefox CSS, and to Alexandre Jousset who fixed a bug in the 
+TOC display.
 
 
 =head1 RELEASE NOTES
@@ -1662,9 +1664,10 @@ under the same terms as Perl itself.
   - factorization (esp. initial <head> in html pages)
   - use Getopts to choose colouring package, toggle CPAN, etc.
   - display bug in perlre (<a...)
+  - bug on =head1 NAME B<..> in Data::ShowTable
   - declare bugs 
       - SQL::Abstract, nonempty line #337
       - LWP: item without '*'
       - CPAN : C<CPAN::WAIT> in L<..> 
-
+      - perlre : line 940, code <I ...> parsed as I<...>
 

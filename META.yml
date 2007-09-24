@@ -1,6 +1,6 @@
 ---
 name: Pod-POM-Web
-version: 1.07
+version: 1.08
 author:
   - 'Laurent Dami <laurent.d...@justice.ge.ch>'
 abstract: HTML Perldoc server
@@ -26,14 +26,14 @@ build_requires:
 recommends:
   AnnoCPAN::Perldoc::Filter: 0
   PPI::HTML: 0
-  Search::Indexer: 0.73
+  Search::Indexer: 0.75
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.07
+    version: 1.08
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
-generated_by: Module::Build version 0.2806
+generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
   version: 1.2
