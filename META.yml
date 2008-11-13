@@ -1,6 +1,6 @@
 ---
 name: Pod-POM-Web
-version: 1.10
+version: 1.11
 author:
   - 'Laurent Dami <laurent.d...@justice.ge.ch>'
 abstract: HTML Perldoc server
@@ -31,7 +31,7 @@ recommends:
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.10
+    version: 1.11
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
 generated_by: Module::Build version 0.2808
