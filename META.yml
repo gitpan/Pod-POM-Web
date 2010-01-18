@@ -1,14 +1,16 @@
 ---
 name: Pod-POM-Web
-version: 1.11
+version: 1.13
 author:
   - 'Laurent Dami <laurent.d...@justice.ge.ch>'
 abstract: HTML Perldoc server
 license: perl
 resources:
   license: http://dev.perl.org/licenses/
+build_requires:
+  Test::More: 0
 requires:
-  Alien::GvaScript: 1.1
+  Alien::GvaScript: 1.021
   Config: 0
   Encode::Guess: 0
   HTTP::Daemon: 0
@@ -22,19 +24,19 @@ requires:
   Time::HiRes: 0
   URI: 0
   URI::QueryParam: 0
-build_requires:
-  Test::More: 0
 recommends:
   AnnoCPAN::Perldoc::Filter: 0
   PPI::HTML: 0
   Search::Indexer: 0.75
+configure_requires:
+  Module::Build: 0.35
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.11
+    version: 1.13
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
-generated_by: Module::Build version 0.2808
+generated_by: Module::Build version 0.350001
 meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
