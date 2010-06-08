@@ -21,7 +21,7 @@ use Config;                     # where are the script directories
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -593,12 +593,12 @@ sub htmlize_perldocs {
   my $source  = $self->slurp_file($self->find_source("perl", ":crlf"));
   my $perlpom = $parser->parse_text($source) or die $parser->error;
 
-  my ($synopsis) = grep {$_->title eq 'SYNOPSIS'} $perlpom->head1();
-
+  my $h1 =  (firstval {$_->title eq 'GETTING HELP'} $perlpom->head1)
+         || (firstval {$_->title eq 'SYNOPSIS'}     $perlpom->head1);
   my $html = "";
 
   # classified pages mentioned in the synopsis
-  foreach my $h2 ($synopsis->head2) {
+  foreach my $h2 ($h1->head2) {
     my $title   = $h2->title;
     my $content = $h2->verbatim;
 

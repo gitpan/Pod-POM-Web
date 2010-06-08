@@ -1,5 +1,8 @@
 Revision history for Pod-POM-Web
 
+1.14 08.06.2010 
+  - fix for pods/perl.pod change of structure since perl 5.12
+
 1.13
   - ignoring dirs starting with '.'
   - no HTML rendering for perltoc (too slow)
