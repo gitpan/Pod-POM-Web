@@ -5,7 +5,7 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 
-use Pod::POM 0.17;              # parsing Pod
+use Pod::POM 0.25;              # parsing Pod
 use List::Util      qw/max/;    # maximum
 use List::MoreUtils qw/uniq firstval any/;
 use Module::CoreList;           # asking if a module belongs to Perl core
@@ -21,7 +21,7 @@ use Config;                     # where are the script directories
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -995,10 +995,7 @@ sub perlvar_items {
 
     # get items defining variables
     my $varpom = $self->pod2pom($self->find_source("perlvar"));
-    my ($description) = grep {$_->title eq 'DESCRIPTION'} $varpom->head1;
-    my ($names)       = grep {$_->title eq 'Predefined Names'} 
-                             $description->head2;
-    my @items = map {$_->item} $names->over;
+    my @items  = _extract_items($varpom);
 
     # group items having common content
     my $tmp = [];
@@ -1267,6 +1264,18 @@ sub parse_version {
 }
 
 
+sub _extract_items { # recursively grab all nodes of type 'item'
+  my $node = shift;
+
+  for ($node->type) {
+    /^item/            and return ($node);
+    /^(pod|head|over)/ and return map {_extract_items($_)} $node->content;
+  }
+  return ();
+}
+
+
+
 1;
 #======================================================================
 # END OF package Pod::POM::Web
@@ -1340,37 +1349,27 @@ sub view_seq_link_transform_path {
     return "$self->{root_url}/$page";
 }
 
-sub view_over {
-  my ($self, $over) = @_;
-  # This is a fix for AnnoCPAN POD which routinely has
-  #    =over \n =over \n ... \n =back \n =back
-  # Pod::POM::HTML omits =over blocks that lack =items.  The code below 
-  # detects the omission and adds it back, wrapped in an indented block.
-  my $content = $self->SUPER::view_over($over);
-  if ($content eq "") {
-    my $overs = $over->over();
-    if (@$overs) {
-      $content = join '', map {$self->view_over($_)} @$overs;
-      if ($content =~ /AnnoCPAN/) {
-        $content = "<div class='AnnoCPAN'>$content</div>";
-      }
-    }
-
-  }
-  return $content;
-}
-
 
 sub view_item {
   my ($self, $item) = @_;
 
-  my $title   = eval {$item->title->present($self)} || "";
-     $title   = "" if $title =~ /^\s*\*\s*$/; 
-  my $id      = _title_to_id($title);
-  my $li      = $id ? qq{<li id="$id">} : qq{<li>};
+  my $title = eval {$item->title->present($self)} || "";
+     $title = "" if $title =~ /^\s*\*\s*$/; 
+
+  my $class = "";
+  my $id    = "";
+
+  if ($title =~ /^AnnoCPAN/) {
+    $class = " class='AnnoCPAN'";
+  }
+  else {
+    $id   = _title_to_id($title);
+    $id &&= qq{ id="$id"};
+  }
+
   my $content = $item->content->present($self);
-     $title   = qq{<b>$title</b>} if $title;
-  return qq{$li$title\n$content</li>\n};
+  $title   = qq{<b>$title</b>} if $title;
+  return qq{<li$id$class>$title\n$content</li>\n};
 }
 
 
@@ -1394,7 +1393,8 @@ sub view_pod {
             . "<a href='$self->{root_url}/source/$self->{path}'>Source</a>";
 
   # parse name and description
-  my ($name_h1) = grep {$_->title =~ /^NAME\b/} $pom->head1();
+  my ($name_h1) = grep {$_->title =~ /^(NAME|TITLE)\b/} $pom->head1();
+  # my $name_h1   = firstval {$_->title =~ /^(NAME|TITLE)\b/} $pom->head1();
   my $doc_title = $name_h1 ? $name_h1->content : 'Untitled';
   $doc_title =~ s/<.*?>//g; # no HTML tags
   my ($name, $description) = ($doc_title =~ /^\s*(.*?)\s+-+\s+(.*)/);
@@ -1999,4 +1999,6 @@ under the same terms as Perl itself.
    - bug: doc files taken as pragmas (lwptut, lwpcook, pip, pler)
    - exploit doc index X<...>
    - do something with perllocal (installation history)
-
+   - restrict to given set of paths/ modules
+       - ned to change toc (no perlfunc, no scripts/pragmas, etc)
+       - treenav with letter entries or not ?

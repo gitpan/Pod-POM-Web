@@ -14,7 +14,7 @@ WriteMakefile
                    'MIME::Types' => 0,
                    'Module::CoreList' => 0,
                    'POSIX' => 0,
-                   'Pod::POM' => '0.17',
+                   'Pod::POM' => '0.25',
                    'Pod::POM::View::HTML' => 0,
                    'Test::More' => 0,
                    'Time::HiRes' => 0,
