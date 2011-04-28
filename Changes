@@ -1,5 +1,11 @@
 Revision history for Pod-POM-Web
 
+1.16 28.04.2011
+  - Export 'server' and 'index' functions into main:: namespace if
+    called from command-line (suggested by DOLMEN -- Olivier Mengué)
+  - fix titles containing POD markup
+  - explicit error message if perlfunc or perlvar are not installed
+
 1.15 20.11.2010
   - H1 header can be either NAME or TITLE
   - adapt to new structure of perlvar.pod in bleadperl

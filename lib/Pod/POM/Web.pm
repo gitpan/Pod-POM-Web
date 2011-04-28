@@ -5,23 +5,24 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 
-use Pod::POM 0.25;              # parsing Pod
-use List::Util      qw/max/;    # maximum
+use Pod::POM 0.25;                  # parsing Pod
+use List::Util      qw/max/;        # maximum
 use List::MoreUtils qw/uniq firstval any/;
-use Module::CoreList;           # asking if a module belongs to Perl core
-use HTTP::Daemon;               # for the builtin HTTP server
-use URI;                        # parsing incoming requests
-use URI::QueryParam;
-use MIME::Types;                # translate file extension into MIME type
-use Alien::GvaScript 1.021000;  # javascript files
-use Encode::Guess;              # guessing if pod source is utf8 or latin1
-use Config;                     # where are the script directories
+use Module::CoreList;               # asking if a module belongs to Perl core
+use HTTP::Daemon;                   # for the builtin HTTP server
+use URI;                            # parsing incoming requests
+use URI::QueryParam;                # implements URI->query_form_hash
+use MIME::Types;                    # translate file extension into MIME type
+use Alien::GvaScript 1.021000;      # javascript files
+use Encode::Guess;                  # guessing if pod source is utf8 or latin1
+use Config;                         # where are the script directories
+use Getopt::Long    qw/GetOptions/; # parsing options from command-line
 
 #----------------------------------------------------------------------
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -72,12 +73,27 @@ our # because used by Pod::POM::View::HTML::_PerlDoc
 
 
 #----------------------------------------------------------------------
+# import : just export the "server" function if called from command-line
+#----------------------------------------------------------------------
+
+sub import {
+  my $class = shift;
+  my ($package, $filename) = caller;
+
+  no strict 'refs';
+  *{'main::server'} = sub {$class->server(@_)} 
+    if $package eq 'main' and $filename eq '-e';
+}
+
+#----------------------------------------------------------------------
 # main entry point
 #----------------------------------------------------------------------
 
 sub server { # builtin HTTP server; unused if running under Apache
   my ($class, $port, $options) = @_;
-  $port ||= 8080;
+
+  $options ||= $class->_options_from_cmd_line;
+  $port    ||= $options->{port} || 8080;
 
   my $daemon = HTTP::Daemon->new(LocalPort => $port,
                                  ReuseAddr => 1) # patch by CDOLAN
@@ -96,7 +112,13 @@ sub server { # builtin HTTP server; unused if running under Apache
     $client_connection->close;
     undef($client_connection);
   }
+}
 
+
+sub _options_from_cmd_line {
+  GetOptions(\my %options, qw/port=i page_title|title=s/);
+  $options{port} ||= $ARGV[0] if @ARGV; # backward support for old API
+  return \%options;
 }
 
 
@@ -316,10 +338,11 @@ sub serve_file {
   my $mime_type = MIME::Types->new->mimeTypeOf($extension);
   my $content = $self->slurp_file($fullpath, ":raw");
   my $mtime   = (stat $fullpath)[9];
-  $self->send_content( {
-          content   => $content, 
-          mtime     => $mtime, 
-          mime_type => $mime_type});
+  $self->send_content({
+    content   => $content,
+    mtime     => $mtime,
+    mime_type => $mime_type,
+  });
 }
 
 
@@ -431,7 +454,7 @@ sub find_source {
     foreach my $dir (@script_dirs) {
       foreach my $ext ("", ".pl", ".bat") {
         -f "$dir/$path$ext" or next;
-        return "$dir/$path$ext";
+        return ("$dir/$path$ext");
       }
     }
     return;
@@ -949,7 +972,9 @@ sub perlfunc_items {
   my ($self) = @_;
 
   unless (@_perlfunc_items) {
-    my $funcpom = $self->pod2pom($self->find_source("perlfunc"));
+    my ($funcpod) = $self->find_source("perlfunc")
+      or die "'perlfunc.pod' does not seem to be installed on this system";
+    my $funcpom   = $self->pod2pom($funcpod);
     my ($description) = grep {$_->title eq 'DESCRIPTION'} $funcpom->head1;
     my ($alphalist)   
       = grep {$_->title =~ /^Alphabetical Listing/i} $description->head2;
@@ -957,7 +982,6 @@ sub perlfunc_items {
   };
   return @_perlfunc_items;
 }
-
 
 
 sub perlfunc {
@@ -994,8 +1018,10 @@ sub perlvar_items {
   unless (@_perlvar_items) {
 
     # get items defining variables
-    my $varpom = $self->pod2pom($self->find_source("perlvar"));
-    my @items  = _extract_items($varpom);
+    my ($varpod) = $self->find_source("perlvar")
+      or die "'perlvar.pod' does not seem to be installed on this system";
+    my $varpom   = $self->pod2pom($varpod);
+    my @items    = _extract_items($varpom);
 
     # group items having common content
     my $tmp = [];
@@ -1275,7 +1301,6 @@ sub _extract_items { # recursively grab all nodes of type 'item'
 }
 
 
-
 1;
 #======================================================================
 # END OF package Pod::POM::Web
@@ -1290,6 +1315,7 @@ use warnings;
 no warnings qw/uninitialized/;
 use base    qw/Pod::POM::View::HTML/;
 use POSIX   qw/strftime/;              # date formatting
+use List::MoreUtils qw/firstval/;
 
 # SUPER::view_seq_text tries to find links automatically ... but is buggy
 # for URLs that contain '$' or ' '. So we disable it, and only consider
@@ -1393,10 +1419,10 @@ sub view_pod {
             . "<a href='$self->{root_url}/source/$self->{path}'>Source</a>";
 
   # parse name and description
-  my ($name_h1) = grep {$_->title =~ /^(NAME|TITLE)\b/} $pom->head1();
-  # my $name_h1   = firstval {$_->title =~ /^(NAME|TITLE)\b/} $pom->head1();
-  my $doc_title = $name_h1 ? $name_h1->content : 'Untitled';
-  $doc_title =~ s/<.*?>//g; # no HTML tags
+  my $name_h1   = firstval {$_->title =~ /^(NAME|TITLE)\b/} $pom->head1();
+  my $doc_title = $name_h1 ? $name_h1->content->present('Pod::POM::View')
+                                               # retrieve content as plain text
+                           : 'Untitled';
   my ($name, $description) = ($doc_title =~ /^\s*(.*?)\s+-+\s+(.*)/);
   $name ||= $doc_title;
   $name =~ s/\n.*//s;
@@ -1770,12 +1796,16 @@ run it as a basic mod_perl handler.
 A third way to use this application is to start a process invoking
 the builtin HTTP server :
 
-  perl -MPod::POM::Web -e "Pod::POM::Web->server"
+  perl -MPod::POM::Web -e server
 
 This is useful if you have no other HTTP server, or if
 you want to run this module under the perl debugger.
+The server will listen at L<http://localhost:8080>.
+A different port may be specified, in several ways :
 
-Then navigate to URL L<http://localhost:8080>.
+  perl -MPod::POM::Web -e server 8888
+  perl -MPod::POM::Web -e server(8888)
+  perl -MPod::POM::Web -e server -- --port 8888
 
 =head2 Opening a specific initial page
 
@@ -1791,8 +1821,7 @@ with the name of any documentation page: for example
 If you run several instances of C<Pod::POM::Web> simultaneously, you may
 want them to have distinct titles. This can be done like this:
 
-  perl -MPod::POM::Web -e "Pod::POM::Web->server(undef, 'My Own Perl Doc')"
-
+  perl -MPod::POM::Web -e server -- --title "My Own Perl Doc"
 
 
 =head1 MISCELLANEOUS
@@ -1909,6 +1938,14 @@ The C<$port> number can be given as optional first argument
 (default is 8080). The second argument C<$options> may be
 used to specify a page title (see L</"handler"> method above).
 
+This function is exported into the C<main::> namespace if perl
+is called with the C<-e> flag, so that you can write
+
+  perl -MPod::POM::Web -e server
+
+Options and port may be specified on the command line :
+
+  perl -MPod::POM::Web -e server -- --port 8888 --title FooBar
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -1944,8 +1981,8 @@ to Chris Dolan who supplied many useful suggestions and patches
 to Rémi Pauchet who pointed out a regression bug with Firefox CSS, 
 to Alexandre Jousset who fixed a bug in the TOC display,
 to Cédric Bouvier who pointed out a IO bug in serving binary files,
-and to Elliot Shank who contributed the "page_title" option.
-
+to Elliot Shank who contributed the "page_title" option,
+and to Olivier 'dolmen' Mengué who suggested to export "server" into C<main::>.
 
 
 =head1 RELEASE NOTES
@@ -1957,7 +1994,7 @@ So if you upgraded from a previous version and want to use
 the index, you need to rebuild it entirely, by running the 
 command :
 
-  perl -MPod::POM::Web::Indexer -e "Pod::POM::Web::Indexer->new->index(-from_scratch => 1)"
+  perl -MPod::POM::Web::Indexer -e "index(-from_scratch => 1)"
 
 
 =head1 BUGS
@@ -1983,19 +2020,11 @@ under the same terms as Perl itself.
 
 =head1 TODO
 
-  - fix XUL error message for CSS
   - real tests !
-  - checks and fallback solution for systems without perlfunc and perlfaq
   - factorization (esp. initial <head> in html pages)
   - use Getopts to choose colouring package, toggle CPAN, etc.
-  - declare bugs 
-      - SQL::Abstract, nonempty line #337
-      - LWP: item without '*'
-      - CPAN : C<CPAN::WAIT> in L<..> 
-      - perlre : line 940, code <I ...> parsed as I<...>
-      - =head1 NAME B<..> in Data::ShowTable
-   - bug using E<..> within L<../..> (ex. see L<perlop/"IE<sol>O Operators">)
-   - declare pod parsing bug in perlre (end of doc)
+  - declare Pod::POM bugs 
+      - perlre : line 1693 improper parsing of L<C<< (?>pattern) >>> 
    - bug: doc files taken as pragmas (lwptut, lwpcook, pip, pler)
    - exploit doc index X<...>
    - do something with perllocal (installation history)
