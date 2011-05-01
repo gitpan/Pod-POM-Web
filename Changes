@@ -1,5 +1,8 @@
 Revision history for Pod-POM-Web
 
+1.17 01.05.2011
+  - skip tests on systems that do not have 'perlfunc.pod' or 'perlvar.pod'
+
 1.16 28.04.2011
   - Export 'server' and 'index' functions into main:: namespace if
     called from command-line (suggested by DOLMEN -- Olivier Mengué)

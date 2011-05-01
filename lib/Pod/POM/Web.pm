@@ -22,7 +22,7 @@ use Getopt::Long    qw/GetOptions/; # parsing options from command-line
 # globals
 #----------------------------------------------------------------------
 
-our $VERSION = '1.16';
+our $VERSION = '1.17';
 
 # some subdirs never contain Pod documentation
 my @ignore_toc_dirs = qw/auto unicore/; 
@@ -613,7 +613,9 @@ sub htmlize_perldocs {
   my $parser  = Pod::POM->new;
 
   # Pod/perl.pom Synopsis contains a classification of perl*.pod documents
-  my $source  = $self->slurp_file($self->find_source("perl", ":crlf"));
+  my ($perlpod) = $self->find_source("perl", ":crlf")
+      or die "'perl.pod' does not seem to be installed on this system";
+  my $source  = $self->slurp_file($perlpod);
   my $perlpom = $parser->parse_text($source) or die $parser->error;
 
   my $h1 =  (firstval {$_->title eq 'GETTING HELP'} $perlpom->head1)
@@ -1072,7 +1074,10 @@ sub perlfaq {
 
  FAQ: 
   for my $num (1..9) {
-    my $faqpom = $self->pod2pom($self->find_source("perlfaq$num"));
+    my $faq = "perlfaq$num";
+    my ($faqpod) = $self->find_source($faq)
+      or die "'$faq.pod' does not seem to be installed on this system";
+    my $faqpom = $self->pod2pom($faqpod);
     my @questions = map {grep {$_->title =~ $regex} $_->head2} $faqpom->head1
       or next FAQ;
     my @nodes = map {$view->print($_)} @questions;
