@@ -1,5 +1,5 @@
 ---
-abstract: 'HTML Perldoc server'
+abstract: HTML Perldoc server
 author:
   - 'Laurent Dami <laurent.d...@justice.ge.ch>'
 build_requires:
@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: 0.38
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110930'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112150'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,7 +16,7 @@ name: Pod-POM-Web
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.17
+    version: 1.18
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
     version: 0
@@ -41,4 +41,4 @@ requires:
   URI::QueryParam: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 1.17
+version: 1.18
