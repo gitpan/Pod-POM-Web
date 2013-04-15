@@ -1,13 +1,13 @@
 ---
-abstract: HTML Perldoc server
+abstract: 'HTML Perldoc server'
 author:
   - 'Laurent Dami <laurent.d...@justice.ge.ch>'
 build_requires:
   Test::More: 0
 configure_requires:
-  Module::Build: 0.38
+  Module::Build: 0.40
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112150'
+generated_by: 'Module::Build version 0.4004, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,10 +16,10 @@ name: Pod-POM-Web
 provides:
   Pod::POM::Web:
     file: lib/Pod/POM/Web.pm
-    version: 1.18
+    version: 1.19
   Pod::POM::Web::Indexer:
     file: lib/Pod/POM/Web/Indexer.pm
-    version: 0
+    version: 1.19
 recommends:
   AnnoCPAN::Perldoc::Filter: 0
   PPI::HTML: 0
@@ -39,6 +39,8 @@ requires:
   Time::HiRes: 0
   URI: 0
   URI::QueryParam: 0
+  parent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 1.18
+  repository: https://github.com/damil/Pod-POM-Web
+version: 1.19
