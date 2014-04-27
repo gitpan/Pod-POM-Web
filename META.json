@@ -4,7 +4,7 @@
       "Laurent Dami <laurent.d...@justice.ge.ch>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4004, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Module::Build version 0.4205",
    "license" : [
       "perl_5"
    ],
@@ -21,7 +21,7 @@
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.42"
          }
       },
       "runtime" : {
@@ -52,7 +52,7 @@
    "provides" : {
       "Pod::POM::Web" : {
          "file" : "lib/Pod/POM/Web.pm",
-         "version" : "1.19"
+         "version" : "1.20"
       },
       "Pod::POM::Web::Indexer" : {
          "file" : "lib/Pod/POM/Web/Indexer.pm",
@@ -68,5 +68,5 @@
          "url" : "https://github.com/damil/Pod-POM-Web"
       }
    },
-   "version" : "1.19"
+   "version" : "1.20"
 }
